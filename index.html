@@ -25,7 +25,7 @@
 <body>
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script>
-        var width = window.innerWidth, height = window.innerHeight, sizeDivisor = 20, nodePadding = 2.5;
+        var width = window.innerWidth, height = window.innerHeight, sizeDivisor = 1, nodePadding = 2.5;
 
         var svg = d3.select("body")
             .append("svg")
@@ -114,7 +114,7 @@
         function types(d) {
             d.hero = d.hero;
             d.count = +d.count;
-            d.size = +d.count / sizeDivisor;
+            d.size = + Math.sqrt(d.count) / sizeDivisor;
             d.size < 3 ? d.radius = 3 : d.radius = d.size;
             return d;
         }

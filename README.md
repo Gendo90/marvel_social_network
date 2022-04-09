@@ -1,8 +1,10 @@
 # Marvel Social Network
 
-[Prototype Bubble Chart](https://gendo90.github.io/marvel_social_network/index.html)
+[Prototype Bubble Chart](https://gendo90.github.io/marvel_social_network/)
 - First-degree relation count, for all heroes in dataset
 - Hover over bubble to see the hero name and first-degree relation count
+- Filter heroes by min/max first degree connections!
+    - Now heroes with fewer than 100 first-degree connections are initially omitted!
 
 [Example Sankey Hero Relationship Flow](https://gendo90.github.io/marvel_social_network/sankey.html)
 - Scroll down to view full chart

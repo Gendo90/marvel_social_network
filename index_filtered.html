@@ -19,16 +19,28 @@
             border-radius: 4px;			
             pointer-events: none;			
         }
+
+        .selectCount {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+        }
     </style>
 </head>
 
 <body>
+    <div class="selectCount">
+        <input id="min" type="text" placeholder="Min Connections">
+        <input id="max" type="text" placeholder="Max Connections">
+        <button>Submit</button>
+    </div>
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script>
         var width = window.innerWidth, height = window.innerHeight, sizeDivisor = 1, nodePadding = 2.5;
 
         var svg = d3.select("body")
             .append("svg")
+            .attr("id", "bubbleChart")
             .attr("width", width)
             .attr("height", height);
 
@@ -40,86 +52,106 @@
             .force("center", d3.forceCenter().x(width * .5).y(height * .5))
             .force("charge", d3.forceManyBody().strength(-15));
 
-        d3.csv("first_degree.csv", types, function (error, graph) {
-            if (error) throw error;            
+        let createChart = (minCount, maxCount) => {
+            d3.csv("first_degree.csv", types, function (error, graph) {
+                if (error) throw error;            
 
-            // filter characters with < 100 connections
-            graph = graph.filter(a => a.count >= 100);
-            // sort the nodes so that the bigger ones are at the back            
-            graph = graph.sort(function (a, b) { return b.size - a.size; });
+                // filter characters with < 100 connections
+                graph = graph.filter(a => minCount <= a.count && a.count <= maxCount);
+                // sort the nodes so that the bigger ones are at the back            
+                graph = graph.sort(function (a, b) { return b.size - a.size; });
 
-            console.log(graph)
+                console.log(graph)
 
-            //update the simulation based on the data
-            simulation
-                .nodes(graph)
-                .force("collide", d3.forceCollide().strength(.5).radius(function (d) { return d.radius + nodePadding; }).iterations(1))
-                .on("tick", function (d) {
-                    node
-                        .attr("cx", function (d) { return d.x; })
-                        .attr("cy", function (d) { return d.y; })
-                });
+                //update the simulation based on the data
+                simulation
+                    .nodes(graph)
+                    .force("collide", d3.forceCollide().strength(.5).radius(function (d) { return d.radius + nodePadding; }).iterations(1))
+                    .on("tick", function (d) {
+                        node
+                            .attr("cx", function (d) { return d.x; })
+                            .attr("cy", function (d) { return d.y; })
+                    });
 
-            // Define the div for the tooltip
-            var div = d3.select("body").append("div")
-                .attr("class", "tooltip")
-                .style("opacity", 0);
+                // Define the div for the tooltip
+                var div = d3.select("body").append("div")
+                    .attr("class", "tooltip")
+                    .style("opacity", 0);
 
-            var node = svg.append("g")
-                .attr("class", "node")
-                .selectAll("circle")
-                .data(graph)
-                .enter().append("svg:circle")
-                .attr("r", function (d) { return d.radius; })
-                //can change the colors here later (grouping?)
-                .attr("fill", function (d) { return color(d.continent); })
-                .attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; })
-                .on("mouseover touchstart", function (d) {
-                    div.transition()
-                        .duration(200)
-                        .style("opacity", .9);
-                    div.html(d.hero + "<br/>" + d.count)
-                        .style("left", (d3.event.pageX) + "px")
-                        .style("top", (d3.event.pageY - 28) + "px");
-                })
-                .on("mouseout touchend", function (d) {
-                    div.transition()
-                        .duration(500)
-                        .style("opacity", 0);
-                })
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended));
+                var node = svg.append("g")
+                    .attr("class", "node")
+                    .selectAll("circle")
+                    .data(graph)
+                    .enter().append("svg:circle")
+                    .attr("r", function (d) { return d.radius; })
+                    //can change the colors here later (grouping?)
+                    .attr("fill", function (d) { return color(d.continent); })
+                    .attr("cx", function (d) { return d.x; })
+                    .attr("cy", function (d) { return d.y; })
+                    .on("mouseover touchstart", function (d) {
+                        div.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        div.html(d.hero + "<br/>" + d.count)
+                            .style("left", (d3.event.pageX) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    })
+                    .on("mouseout touchend", function (d) {
+                        div.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    })
+                    .call(d3.drag()
+                        .on("start", dragstarted)
+                        .on("drag", dragged)
+                        .on("end", dragended));
 
-            
-        });
+                
+            });
 
-        function dragstarted(d) {
-            if (!d3.event.active) simulation.alphaTarget(.03).restart();
-            d.fx = d.x;
-            d.fy = d.y;
+            function dragstarted(d) {
+                if (!d3.event.active) simulation.alphaTarget(.03).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(d) {
+                d.fx = d3.event.x;
+                d.fy = d3.event.y;
+            }
+
+            function dragended(d) {
+                if (!d3.event.active) simulation.alphaTarget(.03);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            function types(d) {
+                d.hero = d.hero;
+                d.count = +d.count;
+                d.size = + Math.sqrt(d.count) / sizeDivisor;
+                d.size < 3 ? d.radius = 3 : d.radius = d.size;
+                return d;
+            }
         }
 
-        function dragged(d) {
-            d.fx = d3.event.x;
-            d.fy = d3.event.y;
-        }
+        createChart(100, 8000);
+    </script>
+    <script>
+        //refresh chart with new filtered range
+        document.querySelector("button").addEventListener("click", (e) => {
+            const minValue = document.getElementById("min").value;
+            const maxValue = document.getElementById("max").value;
 
-        function dragended(d) {
-            if (!d3.event.active) simulation.alphaTarget(.03);
-            d.fx = null;
-            d.fy = null;
-        }
+            // remove chart
+            const chart = document.getElementById("bubbleChart");
+            const currDisplay = chart.querySelector("g");
+            console.log(currDisplay)
+            chart.removeChild(currDisplay);
 
-        function types(d) {
-            d.hero = d.hero;
-            d.count = +d.count;
-            d.size = + Math.sqrt(d.count) / sizeDivisor;
-            d.size < 3 ? d.radius = 3 : d.radius = d.size;
-            return d;
-        }
+            // add new chart
+            createChart(minValue, maxValue);
+        })
     </script>
 </body>
 
